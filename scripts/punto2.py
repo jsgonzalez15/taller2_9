@@ -6,7 +6,8 @@ import numpy as np
 import  matplotlib.pyplot as plt
 import sys
 
-global tiempoCero, i, numVel,vels
+global tiempoCero, i, numVel,vels, tiempo,posVREPx,posVREPy,posODOx,posODOy,x,y,theta
+global nombre, ruta
 i = 0
 tiempoCero = 0
 
@@ -30,8 +31,8 @@ posODOy = [0]
 #---
 
 def callbackTime(data):
-  global tiempoCero, i, numVel,vels
-  odometria(data.data)
+  global tiempoCero, i, numVel,vels, tiempo
+  #odometria(data.data)
   tiempo.append(data.data)
   if tiempoCero == 0:
     tiempoCero = data.data
@@ -43,11 +44,12 @@ def callbackTime(data):
       print(len(tiempo))
 
 def callbackPos(pos):
+  global posVREPx, posVREPy
   posVREPx.append(pos.linear.x)
   posVREPy.append(pos.linear.y)
 
 def tYl():
-  global tiempoCero, i, numVel,vels
+  global tiempoCero, i, numVel,vels,tiempo,posODOx,posODOy
   rospy.init_node('punto2_talker', anonymous=True)
 
   rospy.Subscriber('turtlebot_position', Twist, callbackPos)
@@ -67,6 +69,7 @@ def tYl():
     rate.sleep()
 
 def odometria(newTime):
+  global tiempo, vels, posODOx, posODOy
   dt = newTime - tiempo[-1]
   Vr = vels[i+1,0]
   Vl = vels[i+1,1]
