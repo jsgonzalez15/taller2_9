@@ -4,15 +4,18 @@ import matplotlib.pyplot as plt #Libreria para graficar
 import numpy as np
 from matplotlib import animation
 import threading
- 
-laserdata=np.loadtxt('laserscan.dat') #lectura de archivo con mediciones del sensor
+
+ruta = "/home/jsgonzalez15/robotica_ws/src/taller2_9/resources/"
+ruta2= "/home/jsgonzalez15/robotica_ws/src/taller2_9/results/"
+
+laserdata=np.loadtxt(ruta+'laserscan.dat') #lectura de archivo con mediciones del sensor
 num_data=len(laserdata) #size de medicion
 theta=np.linspace(-np.pi/2, np.pi/2, num_data) #angulos medidos
 posicionx=laserdata*np.cos(theta) #posicionx equivalente de medicion
 posiciony=laserdata*np.sin(theta) #posiciony equivalente de medicion
 
 verLOCAL=True #variable para ver figura local o global
-verLASER=False #variable para ver laser en figura
+verLASER=True #variable para ver laser en figura
 
 '''----------------------------------------------------------------------------'''
 '''----------------Transformacion de coordenadas a marco global----------------'''
@@ -70,9 +73,9 @@ if verLOCAL:
     figure=plt.gcf()
     figure.set_size_inches(10,6)
     if verLASER:
-        plt.savefig('medicionSensorLocalLineas.jpeg',dpi=100) #guardado figura local con rayosLaser
+        plt.savefig(ruta2+'medicionSensorLocalLineas.jpeg',dpi=100) #guardado figura local con rayosLaser
     else:
-        plt.savefig('medicionSensorLocal.jpeg',dpi=100) #guardado figura local sin rayosLaser
+        plt.savefig(ruta2+'medicionSensorLocal.jpeg',dpi=100) #guardado figura local sin rayosLaser
 else:
     plt.scatter(posicionXglobal,posicionYglobal,s=1,label='medicionSensorGlobal') #plotea la medicion en el marco global
     plt.scatter(sensorXglobal,sensorYglobal,marker='x',label='posicionSensorGlobal',c='r') #plotea la posicion del sensor globalmente
@@ -84,9 +87,9 @@ else:
     figure=plt.gcf()
     figure.set_size_inches(10,6)
     if verLASER:
-        plt.savefig('medicionSensorGlobalLineas.jpeg',dpi=100) #guardado figura global con rayosLaser
+        plt.savefig(ruta2+'medicionSensorGlobalLineas.jpeg',dpi=100) #guardado figura global con rayosLaser
     else:
-        plt.savefig('medicionSensorGlobal.jpeg',dpi=100) #guardado figura global sin rayosLaser
+        plt.savefig(ruta2+'medicionSensorGlobal.jpeg',dpi=100) #guardado figura global sin rayosLaser
 plt.show()
 
 
