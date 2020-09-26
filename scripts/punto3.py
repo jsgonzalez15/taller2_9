@@ -6,44 +6,37 @@ import numpy as np
 import  matplotlib.pyplot as plt
 import sys
 import math
-import argparse, copy
+
+import matplotlib.pyplot as plt #Librera para graficar
+from matplotlib import animation
+import threading
 
 global posicionFinal, tiempo,posVREPx,posVREPy,posODOx,posODOy, velODOr, velODOl
 global kp,kalpha,kbeta
-global actualX, actualY, actualTheta
+global actualX, actualY, actualTheta, rho, alpha, beta, nrho,nbeta,nalpha, posVREPrho
 
 actualX=0
 actualY=0
-actualTheta=np.pi
-
-kp=1
-kalpha=1.5
-kbeta=-1 
+actualTheta=0
+rho=0
+alpha=0.5
+beta=0
+nrho=0
+nalpha=0
+nbeta=0
+posVREPrho=[]
+kp=0.3
+kalpha=0.8
+kbeta=-0.1 
 posicionFinal=[-2,-2,-3*np.pi/4] #Posicion predeterminada si usuario no ingresa pos final
-tiempo=0 #tiempo de simulacion 
-#posVREPx,posVREPy=Twist() #posiciones segun topico de VREP
-#posODOx,posODOy=[0] #posiciones segun estimacion por odometria
-#velODOr, velODOl=[0] #velocidades de control segun nueva posicion deseada estimada por odometria
+tiempo=[] #tiempo de simulacion 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-x","--PosicionX", help="Ingrese la coordenada x de su objetivo")
-parser.add_argument("-y","--PosicionY", help="Ingrese la coordenada y de su objetivo")
-parser.add_argument("-a","--Angulo", help="Ingrese la coordenada Theta de su objetivo")
-args1 = parser.parse_args()
 
-print(args1)
+global variableX
+global variableY
 
-if args1.PosicionX:
-  print( '{}{}'.format("Coordenada X: ",args1.PosicionX))
-  objX = float(args1.PosicionX)
-
-if args1.PosicionY:
-  print( '{}{}'.format("Coordenada Y: ",args1.PosicionY))
-  objY = float(args1.PosicionY)
-if args1.Angulo:
-  print( '{}{}'.format("Angulo theta: ",float(args1.Angulo)*math.pi/180))
-  objTeta = float(args1.Angulo)*math.pi/180
-  print(objTeta)
+variableX=[]
+variableY=[]
 
 
 
@@ -53,9 +46,10 @@ if args1.Angulo:
 
 def callbackTime(timeVREP): #funcion para llamar tiempo de topico
     global tiempo
-    timeVREP=timeVREP.data
-    dt=timeVREP-tiempo
-    tiempo=timeVREP
+    tiempo=append(float(timeVREP.data))
+
+
+    
 
 
 def callbackPos(posVREP): #funcion para obtener posicion segun topico
@@ -67,13 +61,44 @@ def callbackPos(posVREP): #funcion para obtener posicion segun topico
 def posActual(posVREP):
   global actualX, actualY, actualTheta, deltaX, deltaY,rho,alpha,beta
   actualX=posVREP.linear.x
-  actualY=posVREO.linear.y
+  actualY=posVREP.linear.y
   actualTheta=posVREP.angular.z
-  deltaX=posicionFinal[1]-actualX
-  deltaY=posicionFinal[2]-actualY
-  rho=math.sqrt((deltaX**2)+(deltaY**2))
+  deltaX=posicionFinal[0]-actualX
+  deltaY=posicionFinal[1]-actualY
+  rho=np.sqrt((deltaX**2)+(deltaY**2))
   alpha=-actualTheta+math.atan2(deltaY,deltaX)
   beta=-actualTheta-alpha
+  print(deltaX)
+
+
+def callback(data):
+  global variableX
+  global variableY
+  variableX.append(data.linear.x)
+  variableY.append(data.linear.y)
+def graficar(i):
+  global variableX
+  global variableY
+  plt.cla() #Se borra informacin anterior al ploteo actual
+  plt.plot(variableX,variableY) #Plotea las variables
+  plt.axis([-1,1,-1,1]) #Define lmites en X y en Y
+def anima():
+  objeto=animation.FuncAnimation(plt.figure(1),graficar,10000) #plt.gcf get currently figure Animar las figuras por parmetro de manera iterativa
+  plt.show()
+
+
+def subs():
+  rospy.init_node("turtle_bot_position", anonymous=True)
+  rospy.Subscriber("turtlebot_position",Twist,callback) 
+  hilo2=threading.Thread(target=anima)
+  hilo2.start()
+  rospy.spin()
+
+def errors():
+  global tiempo
+  global posVREPrho
+  plot(tiempo, posVREPrho)
+
 
 
 
@@ -81,12 +106,14 @@ def posActual(posVREP):
 
 
 def control():
-  global posicionFinal, rho, alpha, beta, nrho, nalhpa, nbeta, args1
-  rospy.init_node('punto3', anonymous=True) #inicializacion de nodo
+  global posicionFinal, rho, alpha, beta, nrho, nalhpa, nbeta, posVREPrho
+  
 
   rospy.Subscriber('turtlebot_position', Twist, posActual)
-  #rospy.Subscriber('simulationTime', Float32, callbackTime)
+  rospy.Subscriber('simulationTime', Float32, callbackTime)
+  
   pub=rospy.Publisher('turtlebot_cmdVel',Twist,queue_size=10)
+  rospy.init_node('punto3', anonymous=True) #inicializacion de nodo
   variable=Twist()
 
 
@@ -94,45 +121,52 @@ def control():
   
   rate = rospy.Rate(10) #10hz
   
+  args=rospy.myargv(argv=sys.argv)
 
-
-      
 
   while not rospy.is_shutdown():
-      
-    if args1!=none:
-      posicionFinal[1]=sys.argv[1]
-      posicionFinal[2]=sys.argv[2]
-      posicionFinal[3]=sys.argv[3]
+    
+    #print(variable)
+
+
+    if len(args)!=0:
+      posicionFinal[0]=float(args[1])
+      posicionFinal[1]=float(args[2])
+      posicionFinal[2]=float(args[3])
 
       #Actualizando Rho y Alpha
-      nrho=-kp*rho*cos(alpha)
-      nalpha=kp*sin(alpha)-kalpha*alpha-kbeta*beta
+      nrho=-kp*rho*np.cos(alpha)
+      nalpha=kp*np.sin(alpha)-kalpha*alpha-kbeta*beta
 
       #Publicar Vel lineal y angular en el topico
-      variable.linear=nrho
-      variable.angular=(kp*sin(alpha)-kalpha*alpha)
+      variable.linear.x=nrho*1300
+      variable.angular.z=(kp*np.sin(alpha)-kalpha*alpha)*1300
+      
+      #
+      
 
       #Ajusta Beta despues de que el robot llegue a la pos final
       if rho==0 and alpha==0:
-        beta=-kp*sin(alpha)
+        beta=-kp*np.sin(alpha)
       rho=nrho
       alpha=nalpha
-
+      posVREPrho.append(rho)
     else:
       #Actualizando Rho y Alpha
-      nrho=-kp*rho*cos(alpha)
-      nalpha=kp*sin(alpha)-kalpha*alpha-kbeta*beta
+      #nrho=-kp*rho*math.cos(alpha)
+      nalpha=kp*math.sin(alpha)-kalpha*alpha-kbeta*beta
 
       #Publicar Vel lineal y angular en el topico
-      variable.linear=nrho
-      variable.angular=(kp*sin(alpha)-kalpha*alpha)
+      variable.linear=0
+      variable.angular=15
 
-      #Aplica control de lazo cerrado
+      #Ajusta Beta despues de que el robot llegue a la pos final
       if rho==0 and alpha==0:
-        beta=-kp*sin(alpha)
+        beta=-kp*math.sin(alpha)
       rho=nrho
       alpha=nalpha
+    pub.publish(variable)
+    rate.sleep()
 
 
   '''
@@ -147,5 +181,9 @@ def control():
     pub.publish(msg)
     rate.sleep()'''
 
+
 if __name__ == '__main__':
+  subs()
   control()
+  errors()
+  
