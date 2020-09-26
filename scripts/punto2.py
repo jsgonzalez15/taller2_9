@@ -14,14 +14,13 @@ i = 0
 tiempoCero = 0
 l = 0.23  # metros
 
-ruta = '/home/michael/robotica_ws/src/taller2_9/resources/'
+ruta = '/home/jsgonzalez15/robotica_ws/src/taller2_9/resources/'
 nombre = sys.argv[1]
 vels = np.loadtxt(ruta+nombre+'.txt')
-
 numVel = vels[0,0]
 
 # angulo inicial
-theta = [-np.pi]
+theta = [-np.pi/4]
 
 # Datos para las graficas
 tiempo = [0]
@@ -44,8 +43,8 @@ def callbackTime(data):
     Vr = 0.01*vels[i+1,0] # Se pasa a metros
     Vl = 0.01*vels[i+1,1] # Se pasa a metros
     # Calculo de odometria
-    posODOx.append( posODOx[-1] + 0.1*(0.5*(Vr+Vl)*np.cos(theta[-1])*dt ))
-    posODOy.append( posODOy[-1] + 0.1*(0.5*(Vr+Vl)*np.sin(theta[-1])*dt ))
+    posODOx.append( posODOx[-1] + (0.5*(Vr+Vl)*np.cos(theta[-1])*dt ))
+    posODOy.append( posODOy[-1] + (0.5*(Vr+Vl)*np.sin(theta[-1])*dt ))
     theta.append( theta[-1] + 1/l*(Vr-Vl)*dt)
 
     # Tiempo transcurrido en la velocidad actual
