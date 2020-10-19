@@ -1,12 +1,12 @@
 import cv2
 import numpy as np
-#import argparse
-#parser = argparse.ArgumentParser()
-#parser.add_argument("video", help="Ingrese el nombre del video")
-#args=parser.parse_args()
-#archivo_video=args.video
-#capture=cv2.VideoCapture(archivo_video) #Se lee el video pasado por parámetro
-capture=cv2.VideoCapture('ssl1.mp4')
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("video", help="Ingrese el nombre del video")
+args=parser.parse_args()
+archivo_video=args.video
+capture=cv2.VideoCapture(archivo_video) #Se lee el video pasado por parámetro
+
 
 class Jugador():
     def __init__(self,coordenadas,numero,verdes,fucsias):
@@ -77,30 +77,71 @@ def identificar(centro,distancia,colorBuscado):
             #print('En el centro:')
             #print(centro)
     return cercanos
-            
+
+
+
+circles=np.zeros((4,2),np.int)        
+counter=0
+def mousePoints(event,x,y,flags,params):
+    global counter
+    if event == cv2.EVENT_LBUTTONDOWN:
+        
+        circles[counter]=x,y
+        counter+=1
+        print(circles)
+
+    #cv2.circle(cap,(x,y),20,(255,255,255),2)
     
+cap=cv2.VideoCapture(archivo_video)  
+
+rval, im_src = cap.read()
+cap80 = rescale_frame(im_src, percent=80)
+cap.release()
+
+while True:
+    
+    if counter==4:
+        puntos1=np.float32(circles)*5/4
+        
+        puntos2=np.float32([[0,0],[900,0],[0,600],[900,600]])
+        matrix=cv2.getPerspectiveTransform(puntos1,puntos2)
+        result=cv2.warpPerspective(im_src,matrix,(900,600))
+        cv2.imshow('Imagen2',result)
+        
+        
+    
+    
+    cv2.imshow('Imagen',cap80)
+    cv2.setMouseCallback('Imagen',mousePoints)
+    k = cv2.waitKey(1) & 0xFF
+    if k==27:
+        break
+        
+cv2.destroyAllWindows()
+
+
     
 
     
 while True:
+    
     rect, frame=capture.read()
     
-    #Se definen las 4 esquinas de la cancha para la nueva perspectiva. (Por tanteo)
-    cv2.circle(frame,(285,25),5,(0,0,255),-1)
-    cv2.circle(frame,(1318,95),5,(0,0,255),-1)
-    cv2.circle(frame,(35,700),5,(0,0,255),-1)
-    cv2.circle(frame,(1420,820),5,(0,0,255),-1)
     
     #Se reescala la imagen al 90% debido a que la alta resolución del video queda cortado
     frame80 = rescale_frame(frame, percent=90)
-    
+    #cv2.setMouseCallBack(frame80,mousePoints) 
     #Se aplica la nueva perspectiva basada en las 4 esquinas  a una resolución de 900x600
-    puntos1=np.float32([[285,25],[1318,95],[35,700],[1420,820]])
+    puntos1=np.float32(circles)*5/4
     puntos2=np.float32([[0,0],[900,0],[0,600],[900,600]])
     matrix=cv2.getPerspectiveTransform(puntos1,puntos2)
+    result=cv2.warpPerspective(im_src,matrix,(900,600))
+    cv2.imshow('Imagen2',result)  
     
+    
+      
     result=cv2.warpPerspective(frame,matrix,(900,600))
-     
+    
     #Pasar video a HSV para aplicar filtros
     hsv=cv2.cvtColor(result,cv2.COLOR_BGR2HSV)
     
@@ -224,7 +265,7 @@ while True:
     
     identity=d_fucsia+d_azul+d_verde+d_amarillo
 
-    #cv2.imshow('frame80', frame80)
+    cv2.imshow('frame80', frame80)
     cv2.imshow('Perspectiva nueva',result)
     #cv2.imshow('todos',identity)
     #cv2.imshow('fucsia',d_fucsia)
@@ -235,6 +276,7 @@ while True:
     #cv2.imshow('hull',hull)
     #print (radius)
     #print(center)
+    
     
     
     
